@@ -136,7 +136,21 @@ const TaskService = {
   async getTasksBlockedBy(taskId: string): Promise<any[]> {
     return await TaskDependencyModel.find({
       depends_on_task_id: taskId,
-    }).populate("task_id", "title status priority");
+    }).populate("task_id", "title status priority estimated_hours");
+  },
+
+  async getAllTasks(): Promise<Task[]> {
+    const tasks = await TaskModel.find();
+    if (!tasks.length) return [];
+    return tasks;
+  },
+
+  async getTasksByProjectId(projectId: string): Promise<Task[]> {
+    const tasks = await TaskModel.find({ project_id: projectId })
+      .populate("assignee_id", "name email")
+      .populate("project_id", "title");
+    if (!tasks.length) return [];
+    return tasks;
   },
 };
 

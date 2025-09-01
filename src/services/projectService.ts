@@ -3,6 +3,7 @@ import { TaskModel } from "../models/Task";
 import { TaskDependencyModel } from "../models/TaskDependency";
 import { Project, Task, TaskStatus } from "../types";
 import DependencyValidator from "../utils/dependencyValidator";
+import TaskService from "./taskService";
 
 const ProjectService = {
   async createProject(projectData: Partial<Project>): Promise<Project> {
@@ -10,8 +11,8 @@ const ProjectService = {
     return await project.save();
   },
 
-  async getUserProjects(userId: string): Promise<Project[]> {
-    return await ProjectModel.find({ owner_id: userId });
+  async getProjects(): Promise<Project[]> {
+    return await ProjectModel.find().populate("owner_id", "name email");
   },
 
   async getProjectById(projectId: string): Promise<Project | null> {
@@ -28,12 +29,19 @@ const ProjectService = {
     );
     if (!project) return null;
 
-    const tasks = await TaskModel.find({ project_id: projectId }).populate(
-      "assignee_id",
-      "name email"
+    const tasks = await TaskService.getTasksByProjectId(projectId);
+
+    const tasksWithDependencies = await Promise.all(
+      tasks.map(async (task: any) => {
+        const obj = task.toObject();
+        obj.id = obj._id;
+        obj.dependencies = await TaskService.getTaskDependencies(obj.id);
+        obj.blocking_tasks = await TaskService.getTasksBlockedBy(obj.id);
+        return obj;
+      })
     );
 
-    return { ...project.toObject(), tasks };
+    return { ...project.toObject(), tasks: tasksWithDependencies };
   },
 
   async updateProject(
@@ -52,7 +60,7 @@ const ProjectService = {
       await session.withTransaction(async () => {
         // Delete all tasks and their dependencies
         const tasks = await TaskModel.find({ project_id: projectId });
-        const taskIds = tasks.map((t: Task) => t._id);
+        const taskIds = tasks.map((t: Task) => t.id);
 
         await TaskDependencyModel.deleteMany({
           $or: [
@@ -86,13 +94,14 @@ const ProjectService = {
       status: TaskStatus.DONE,
     });
 
-    const completion =
-      totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+    const completion = parseInt(
+      (totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100).toFixed(2)
+    );
 
     return { completion, totalTasks, completedTasks };
   },
 
-  async getCriticalPath(projectId: string): Promise<string[]> {
+  async getCriticalPath(projectId: string): Promise<Task[]> {
     return await DependencyValidator.getCriticalPath(projectId);
   },
 };

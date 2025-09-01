@@ -10,9 +10,18 @@ const UserSchema = new Schema<User>({
     required: true,
     default: UserRole.DEVELOPER,
   },
-  password: { type: String, required: true },
   createdAt: { type: Number, default: Date.now() },
   updatedAt: { type: Number, default: Date.now() },
+});
+
+UserSchema.set("toJSON", {
+  virtuals: true, // keep virtual fields like `id`
+  versionKey: false, // removes __v
+  transform: function (doc, ret: any) {
+    ret.id = ret._id;
+    delete ret._id;
+    return ret;
+  },
 });
 
 export const UserModel = mongoose.model<User>("User", UserSchema);

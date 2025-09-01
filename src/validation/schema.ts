@@ -7,16 +7,16 @@ export const userSchema = Joi.object({
   role: Joi.string()
     .valid(...Object.values(UserRole))
     .required(),
-  password: Joi.string().min(6).required(),
 });
 
 export const projectSchema = Joi.object({
-  name: Joi.string().required(),
+  title: Joi.string().required(),
   description: Joi.string().required(),
-  deadline: Joi.date().iso().required(),
+  deadline: Joi.number().required(),
   status: Joi.string()
     .valid(...Object.values(ProjectStatus))
     .optional(),
+  owner_id: Joi.string().required(),
 });
 
 export const taskSchema = Joi.object({
@@ -27,6 +27,9 @@ export const taskSchema = Joi.object({
     .optional(),
   assignee_id: Joi.string().optional(),
   estimated_hours: Joi.number().min(0).optional(),
+  status: Joi.string()
+    .valid(...Object.values(TaskStatus))
+    .optional(),
 });
 
 export const taskStatusSchema = Joi.object({

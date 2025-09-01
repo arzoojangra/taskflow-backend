@@ -21,4 +21,15 @@ const TaskSchema = new Schema<Task>({
   updatedAt: { type: Number, default: Date.now() },
 });
 
+
+TaskSchema.set("toJSON", {
+  virtuals: true, // keep virtual fields like `id`
+  versionKey: false, // removes __v
+  transform: function (doc, ret: any) {
+    ret.id = ret._id;
+    delete ret._id;
+    return ret;
+  },
+});
+
 export const TaskModel = mongoose.model<Task>("Task", TaskSchema);

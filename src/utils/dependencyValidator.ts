@@ -15,7 +15,6 @@ const DependencyValidator = {
       return true;
     }
 
-    // Use DFS to check if dependsOnTaskId has a path back to taskId
     const visited = new Set<string>();
 
     const hasPathTo = async (
@@ -89,14 +88,18 @@ const DependencyValidator = {
   /**
    * Get critical path for a project (longest dependency chain)
    */
-  async getCriticalPath(projectId: string): Promise<string[]> {
-    const tasks = await TaskModel.find({ project_id: projectId });
-    const taskIds = tasks.map((t) => t._id.toString());
+  async getCriticalPath(projectId: string): Promise<any> {
+    const tasks = await TaskModel.find({ project_id: projectId }).lean();
+    const taskMap: { [key: string]: any } = {};
+    const taskIds = tasks.map((t) => {
+      taskMap[t._id.toString()] = t;
+      return t._id.toString();
+    });
 
     const dependencies = await TaskDependencyModel.find({
       task_id: { $in: taskIds },
       depends_on_task_id: { $in: taskIds },
-    });
+    }).lean();
 
     // Build adjacency list
     const graph: { [key: string]: string[] } = {};
@@ -112,7 +115,7 @@ const DependencyValidator = {
       inDegree[dep.task_id.toString()]++;
     }
 
-    // Find longest path using topological sort with distance tracking
+    // Track longest path
     const distances: { [key: string]: number } = {};
     const paths: { [key: string]: string[] } = {};
 
@@ -123,14 +126,11 @@ const DependencyValidator = {
 
     const queue: string[] = [];
     for (const taskId of taskIds) {
-      if (inDegree[taskId] === 0) {
-        queue.push(taskId);
-      }
+      if (inDegree[taskId] === 0) queue.push(taskId);
     }
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-
       for (const neighbor of graph[current]) {
         if (distances[current] + 1 > distances[neighbor]) {
           distances[neighbor] = distances[current] + 1;
@@ -138,24 +138,47 @@ const DependencyValidator = {
         }
 
         inDegree[neighbor]--;
-        if (inDegree[neighbor] === 0) {
-          queue.push(neighbor);
-        }
+        if (inDegree[neighbor] === 0) queue.push(neighbor);
       }
     }
 
-    // Find the path with maximum distance
+    // Find the critical path
     let maxDistance = 0;
-    let criticalPath: string[] = [];
+    let criticalPathIds: string[] = [];
 
     for (const taskId of taskIds) {
       if (distances[taskId] > maxDistance) {
         maxDistance = distances[taskId];
-        criticalPath = paths[taskId];
+        criticalPathIds = paths[taskId];
       }
     }
 
-    return criticalPath;
+    // Build response
+    const tasksInPath = criticalPathIds.map((id) => ({
+      id,
+      name: taskMap[id].title,
+      start_date: taskMap[id].start_date,
+      end_date: taskMap[id].end_date,
+      duration: taskMap[id].duration,
+      isCritical: true,
+    }));
+
+    const edges = [];
+    for (let i = 0; i < criticalPathIds.length - 1; i++) {
+      edges.push({
+        from: criticalPathIds[i],
+        to: criticalPathIds[i + 1],
+      });
+    }
+
+    return {
+      projectId,
+      criticalPath: {
+        taskIds: criticalPathIds,
+        tasks: tasksInPath,
+        edges,
+      },
+    };
   },
 };
 

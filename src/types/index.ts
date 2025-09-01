@@ -4,6 +4,7 @@ export enum TaskStatus {
   TODO = "todo",
   IN_PROGRESS = "in_progress",
   DONE = "done",
+  BLOCKED = "blocked",
 }
 
 export enum TaskPriority {
@@ -22,24 +23,22 @@ export enum ProjectStatus {
 }
 
 export enum UserRole {
-  ADMIN = "admin",
   MANAGER = "manager",
   DEVELOPER = "developer",
 }
 
 export interface User {
-  _id: string;
+  id: mongoose.Types.ObjectId;
   name: string;
   email: string;
   role: UserRole;
-  password: string;
   createdAt: number;
   updatedAt: number;
 }
 
 export interface Project {
-  _id: string;
-  name: string;
+  id: mongoose.Types.ObjectId;
+  title: string;
   description: string;
   owner_id: mongoose.Types.ObjectId | string;
   deadline: number;
@@ -49,7 +48,7 @@ export interface Project {
 }
 
 export interface Task {
-  _id: string;
+  id: mongoose.Types.ObjectId;
   project_id: mongoose.Types.ObjectId | string;
   title: string;
   description: string;
@@ -62,7 +61,7 @@ export interface Task {
 }
 
 export interface TaskDependency {
-  _id: string;
+  id: mongoose.Types.ObjectId;
   task_id: mongoose.Types.ObjectId | string;
   depends_on_task_id: mongoose.Types.ObjectId | string;
   createdAt: number;

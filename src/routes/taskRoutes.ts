@@ -1,10 +1,7 @@
 import { Router } from "express";
-import { TaskController } from "../controllers/taskController";
-import { authenticate } from "../middleware/auth";
+import TaskController from "../controllers/taskController";
 
 const router = Router();
-
-router.use(authenticate);
 
 // Task management routes
 router.post("/projects/:id/tasks", TaskController.createTask);
@@ -12,6 +9,7 @@ router.get("/tasks/:id", TaskController.getTask);
 router.put("/tasks/:id", TaskController.updateTask);
 router.put("/tasks/:id/status", TaskController.updateTaskStatus);
 router.delete("/tasks/:id", TaskController.deleteTask);
+router.get("/projects/:id/tasks", TaskController.getTasksByProjectId);
 
 // Dependency management routes
 router.post("/tasks/:id/dependencies", TaskController.addDependency);

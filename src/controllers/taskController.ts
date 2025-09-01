@@ -7,8 +7,8 @@ import {
 } from "../validation/schema";
 import TaskService from "../services/taskService";
 
-export class TaskController {
-  static async createTask(req: Request, res: Response): Promise<void> {
+const TaskController = {
+  async createTask(req: Request, res: Response): Promise<void> {
     try {
       const { error, value } = taskSchema.validate(req.body);
       if (error) {
@@ -25,9 +25,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async getTask(req: Request, res: Response): Promise<void> {
+  async getTask(req: Request, res: Response): Promise<void> {
     try {
       const task = await TaskService.getTaskById(req.params.id);
       if (!task) {
@@ -38,9 +38,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async updateTask(req: Request, res: Response): Promise<void> {
+  async updateTask(req: Request, res: Response): Promise<void> {
     try {
       const { error, value } = taskSchema.validate(req.body);
       if (error) {
@@ -58,9 +58,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async updateTaskStatus(req: Request, res: Response): Promise<void> {
+  async updateTaskStatus(req: Request, res: Response): Promise<void> {
     try {
       const { error, value } = taskStatusSchema.validate(req.body);
       if (error) {
@@ -82,9 +82,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async deleteTask(req: Request, res: Response): Promise<void> {
+  async deleteTask(req: Request, res: Response): Promise<void> {
     try {
       const success = await TaskService.deleteTask(req.params.id);
       if (!success) {
@@ -95,9 +95,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async addDependency(req: Request, res: Response): Promise<void> {
+  async addDependency(req: Request, res: Response): Promise<void> {
     try {
       const { error, value } = dependencySchema.validate(req.body);
       if (error) {
@@ -119,9 +119,9 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async removeDependency(req: Request, res: Response): Promise<void> {
+  async removeDependency(req: Request, res: Response): Promise<void> {
     try {
       const success = await TaskService.removeDependency(
         req.params.taskId,
@@ -135,23 +135,34 @@ export class TaskController {
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async getTaskDependencies(req: Request, res: Response): Promise<void> {
+  async getTaskDependencies(req: Request, res: Response): Promise<void> {
     try {
       const dependencies = await TaskService.getTaskDependencies(req.params.id);
       res.json(dependencies);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
+  },
 
-  static async getTasksBlocking(req: Request, res: Response): Promise<void> {
+  async getTasksBlocking(req: Request, res: Response): Promise<void> {
     try {
       const blocking = await TaskService.getTasksBlockedBy(req.params.id);
       res.json(blocking);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
-  }
-}
+  },
+
+  async getTasksByProjectId(req: Request, res: Response): Promise<void> {
+    try {
+      const tasks = await TaskService.getTasksByProjectId(req.params.id);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+};
+
+export default TaskController;
